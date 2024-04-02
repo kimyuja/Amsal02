@@ -15,12 +15,27 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	class USphereComponent* headShot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class USkeletalMeshComponent* torso;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class USkeletalMeshComponent* hand;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class USkeletalMeshComponent* pants;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class USkeletalMeshComponent* shoes;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	class USceneComponent* checkPoint1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	class USceneComponent* checkPoint2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class UAnimMontage* anim1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	float Life = 100.0f;
@@ -34,6 +49,20 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	FVector startLocation;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	bool bArrive1 = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	bool bArrive2 = true;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	bool bGo = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	int32 play = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	int32 delayCheck = 0;
 
 protected:
 	virtual void BeginPlay() override;
@@ -43,4 +72,9 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION()
+	void BasicMoveCycle1();
+
+	UFUNCTION()
+	void BasicMoveCycle2();
 };
