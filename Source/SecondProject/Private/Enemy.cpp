@@ -17,8 +17,8 @@ AEnemy::AEnemy()
 	// Çìµå¼¦¿ë ÄÄÆ÷³ÍÆ®¸¦ »ý¼º
 	headShot = CreateDefaultSubobject<USphereComponent>(TEXT("Head Shot"));
 	headShot->SetupAttachment(GetCapsuleComponent());
-	headShot->SetRelativeLocation(FVector(0,0,85));
-	headShot->SetSphereRadius(16.0f);
+	headShot->SetRelativeLocation(FVector(0,0,90));
+	headShot->SetSphereRadius(20.0f);
 
 	// Ä¸½¶ ÄÄÆ÷³ÍÆ® Å©±â Á¶Àý
 	GetCapsuleComponent()->SetCapsuleHalfHeight(70.0f);
@@ -84,9 +84,9 @@ void AEnemy::Tick(float DeltaTime)
 		delayCheck = 0;
 	}
 
-	UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
+	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
 
-	UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
 }
 
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -132,4 +132,22 @@ void AEnemy::BasicMoveCycle2()
 		}
 	}
 }
+
+void AEnemy::Damaged(float damage)
+{
+	Life = FMath::Clamp(100.0 - damage, 0, 100);
+	
+	if (Life <= 0)
+	{
+		GetCharacterMovement()->DisableMovement();
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		GetMesh()->SetAllBodiesSimulatePhysics(true);
+		GetMesh()->SetAllBodiesPhysicsBlendWeight(1.0);
+		headShot->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%f"), Life);
+}
+
 

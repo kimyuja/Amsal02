@@ -41,9 +41,6 @@ public:
 	float Life = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
-	float damage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	FText warningText;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
@@ -77,4 +74,7 @@ public:
 
 	UFUNCTION()
 	void BasicMoveCycle2();
+
+	UFUNCTION(BlueprintCallable)
+	void Damaged(float damage);
 };
