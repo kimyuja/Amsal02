@@ -61,6 +61,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 delayCheck = 0;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	int32 warningstack = 0;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -76,4 +79,10 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void Damaged(float damage);
+
+	UFUNCTION(BlueprintCallable)
+	void ChangeWarning();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateStack(int32 warn);
 };
