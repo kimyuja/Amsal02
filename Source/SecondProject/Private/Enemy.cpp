@@ -1,21 +1,13 @@
-
-
 #include "Enemy.h"
 #include <Components/SphereComponent.h>
 #include <Components/SkeletalMeshComponent.h>
 #include <Components/SceneComponent.h>
 #include <C:\Program Files\Epic Games\UE_5.3\Engine\Source\Runtime\AIModule\Classes\AIController.h>
-<<<<<<< Updated upstream
-=======
 #include <../../../../../../../Source/Runtime/Engine/Classes/Components/CapsuleComponent.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/Components/SkinnedMeshComponent.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/Kismet/KismetMathLibrary.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/Components/TextRenderComponent.h>
-#include <../../../../../../../Source/Runtime/Core/Public/Internationalization/Text.h>
-#include <../../../../../../../Source/Runtime/AIModule/Classes/Perception/AIPerceptionComponent.h>
-#include "../SecondProjectCharacter.h"
->>>>>>> Stashed changes
 
 AEnemy::AEnemy()
 {
@@ -23,17 +15,16 @@ AEnemy::AEnemy()
 
 	// 헤드샷용 컴포넌트를 생성
 	headShot = CreateDefaultSubobject<USphereComponent>(TEXT("Head Shot"));
-<<<<<<< Updated upstream
-	headShot->SetRelativeLocation(FVector(0,0,85));
-	headShot->SetSphereRadius(16.0f);
-=======
 	headShot->SetupAttachment(GetCapsuleComponent());
-	headShot->SetRelativeLocation(FVector(0,0,90));
+	headShot->SetRelativeLocation(FVector(0, 0, 90));
 	headShot->SetSphereRadius(20.0f);
 
 	// 캡슐 컴포넌트 크기 조절
 	GetCapsuleComponent()->SetCapsuleHalfHeight(70.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(40.0f);
+
+	// 매쉬 높이 조절
+	GetMesh()->SetRelativeLocation(FVector(0, 0, -90));
 
 	// SkelatalMesh 컴포넌트 생성
 	torso = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Torso"));
@@ -45,19 +36,22 @@ AEnemy::AEnemy()
 	shoes = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Shoes"));
 	shoes->SetupAttachment(GetMesh());
 
-	// TextRender 컴포넌트 생성
-	warningComp = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Text"));
-	warningComp->SetRelativeLocation(FVector(0, 0, 110));
-	warningComp->SetHorizontalAlignment(EHTA_Center);
+	//경계도 표시
+	warningComp = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Warning"));
+	warningComp->SetupAttachment(RootComponent);
 	warningComp->SetText(warningText);
-	
-	// AI perception 생성
-	aiperception = CreateDefaultSubobject<UAIPerceptionComponent>("AI Perception");
->>>>>>> Stashed changes
+	warningComp->SetRelativeLocation(FVector(0, 0, 130));
 
 	//체크포인트 생성
 	checkPoint1 = CreateDefaultSubobject<USceneComponent>(TEXT("CheckPoint1"));
+	checkPoint1->SetRelativeLocation(FVector(700, -700, 0));
 	checkPoint2 = CreateDefaultSubobject<USceneComponent>(TEXT("CheckPoint2"));
+
+	//캐릭터의 최대 속도, 가속도를 설정.(단위 = cm/s)
+	GetCharacterMovement()->MaxWalkSpeed = 100.0f;
+
+	//캐릭터가 네비게이션 경로로 이동할 때 가속 적용(켜저 있어야 ABP가 작동함)
+	GetCharacterMovement()->UseAccelerationForPathFollowing();
 }
 
 void AEnemy::BeginPlay()
@@ -65,8 +59,6 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 
 	startLocation = GetActorLocation();
-<<<<<<< Updated upstream
-=======
 
 	if (anim1 != nullptr)
 	{
@@ -74,14 +66,34 @@ void AEnemy::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
 	}
 
-	aiperception->OnPerceptionUpdated.AddDynamic(this, &AEnemy::OnPerceptionPlayer)
-
->>>>>>> Stashed changes
 }
 
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!bArrive1 && bGo)
+	{
+		BasicMoveCycle1();
+	}
+	else if (!bArrive2 && bGo)
+	{
+		BasicMoveCycle2();
+	}
+	else
+	{
+		delayCheck++;
+	}
+
+	if (delayCheck > 1000)
+	{
+		bGo = true;
+		delayCheck = 0;
+	}
+
+	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
+
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
 }
 
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -90,8 +102,6 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-<<<<<<< Updated upstream
-=======
 void AEnemy::BasicMoveCycle1()
 {
 	AAIController* alCon = Cast<AAIController>(GetController());
@@ -133,7 +143,7 @@ void AEnemy::BasicMoveCycle2()
 void AEnemy::Damaged(float damage)
 {
 	Life = FMath::Clamp(100.0 - damage, 0, 100);
-	
+
 	if (Life <= 0)
 	{
 		GetCharacterMovement()->DisableMovement();
@@ -146,12 +156,3 @@ void AEnemy::Damaged(float damage)
 
 	UE_LOG(LogTemp, Warning, TEXT("%f"), Life);
 }
-
-void AEnemy::OnPerceptionPlayer(const TArray<AActor*>& UpdatedActors)
-{
-	//ASecondProjectCharacter* player = Cast<ASecondProjectCharacter>(UpdatedActors);
-
-
-}
-
->>>>>>> Stashed changes
