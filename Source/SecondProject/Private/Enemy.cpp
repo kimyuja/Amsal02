@@ -75,25 +75,6 @@ void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!bArrive1 && bGo)
-	{
-		BasicMoveCycle1();
-	}
-	else if (!bArrive2 && bGo)
-	{
-		BasicMoveCycle2();
-	}
-	else
-	{
-		delayCheck++;
-	}
-
-	if (delayCheck > 100)
-	{
-		bGo = true;
-		delayCheck = 0;
-	}
-
 	ChangeWarning();
 
 	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
@@ -116,9 +97,9 @@ void AEnemy::BasicMoveCycle1()
 	// AI 컨트롤러 안에 있는 MoveToLocation 함수를 사용
 	aiCon->MoveToLocation(checkPoint1->GetRelativeLocation());
 	// 목적지와 에너미 사이의 거리를 구한다.
-	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation());
-	// 거리값이 80 이하일 때
-	if (check < 80)
+	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetComponentLocation());
+	// 거리값이 100 이하일 때
+	if (check < 100)
 	{
 		bArrive1 = true;
 		bArrive2 = false;
@@ -136,8 +117,8 @@ void AEnemy::BasicMoveCycle2()
 {
 	AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
 	aiCon->MoveToLocation(checkPoint2->GetRelativeLocation());
-	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation());
-	if (check < 80)
+	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetComponentLocation());
+	if (check < 100)
 	{
 		bArrive2 = true;
 		bArrive1 = false;
@@ -174,6 +155,25 @@ void AEnemy::ChangeWarning()
 
 	if (warningstack < 1000)
 	{
+		if (!bArrive1 && bGo)
+		{
+			BasicMoveCycle1();
+		}
+		else if (!bArrive2 && bGo)
+		{
+			BasicMoveCycle2();
+		}
+		else
+		{
+			delayCheck++;
+		}
+
+		if (delayCheck > 100)
+		{
+			bGo = true;
+			delayCheck = 0;
+		}
+
 		warningComp->SetText(FText::FromString(TEXT(".")));
 	}
 	else if(warningstack < 2000)
