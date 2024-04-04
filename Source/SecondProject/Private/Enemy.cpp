@@ -10,6 +10,7 @@
 #include <../../../../../../../Source/Runtime/Engine/Classes/Components/TextRenderComponent.h>
 #include "EnemyCon.h"
 #include "../SecondProjectCharacter.h"
+#include <../../../../../../../Source/Runtime/Engine/Public/EngineUtils.h>
 
 AEnemy::AEnemy()
 {
@@ -87,7 +88,7 @@ void AEnemy::Tick(float DeltaTime)
 		delayCheck++;
 	}
 
-	if (delayCheck > 1000)
+	if (delayCheck > 100)
 	{
 		bGo = true;
 		delayCheck = 0;
@@ -98,6 +99,7 @@ void AEnemy::Tick(float DeltaTime)
 	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
 
 	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation()));
 }
 
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -108,11 +110,15 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AEnemy::BasicMoveCycle1()
 {
+	// AEnemyCon 캐스팅
 	AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
 
+	// AI 컨트롤러 안에 있는 MoveToLocation 함수를 사용
 	aiCon->MoveToLocation(checkPoint1->GetRelativeLocation());
+	// 목적지와 에너미 사이의 거리를 구한다.
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation());
-	if (check < 100)
+	// 거리값이 80 이하일 때
+	if (check < 80)
 	{
 		bArrive1 = true;
 		bArrive2 = false;
@@ -120,7 +126,7 @@ void AEnemy::BasicMoveCycle1()
 		if (anim1 != nullptr)
 		{
 			PlayAnimMontage(anim1);
-			UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
+			//UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
 		}
 	}
 
@@ -131,7 +137,7 @@ void AEnemy::BasicMoveCycle2()
 	AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
 	aiCon->MoveToLocation(checkPoint2->GetRelativeLocation());
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation());
-	if (check < 100)
+	if (check < 80)
 	{
 		bArrive2 = true;
 		bArrive1 = false;
@@ -139,7 +145,7 @@ void AEnemy::BasicMoveCycle2()
 		if (anim1 != nullptr)
 		{
 			PlayAnimMontage(anim1);
-			UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
+			//UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
 		}
 	}
 }
@@ -178,11 +184,13 @@ void AEnemy::ChangeWarning()
 	{
 		warningComp->SetText(FText::FromString(TEXT("!")));
 		AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
-		APlayerController* con = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
-		if (con != nullptr)
+		FindPlayerIterater();
+
+		if (FindPlayerIterater() != nullptr)
 		{
-			
-			aiCon->MoveToActor(con);
+				
+			aiCon->MoveToActor(FindPlayerIterater());
+			GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 		}
 		else
 		{
@@ -195,4 +203,26 @@ void AEnemy::ChangeWarning()
 void AEnemy::UpdateStack(int32 warn)
 {
 	warningstack += warn;
+}
+
+ASecondProjectCharacter* AEnemy::FindPlayerIterater()
+{
+	//for(TActorInterator<찾으려는 클래스> 변수이름(GetWorld()); 변수이름; ++변수이름)
+	TArray<ASecondProjectCharacter*> players;
+
+	for (TActorIterator<ASecondProjectCharacter> player(GetWorld()); player; ++player)
+	{
+		players.Add(*player);
+	}
+	// players 배열에 하나라도 값이 들어가 있다면 그 값 중 0번을 반환하고
+	if (players.Num() > 0)
+	{
+		return players[0];
+	}
+	// 아무것도 없으면 nullptr 를 반환한다.
+	else
+	{
+		return nullptr;
+		UE_LOG(LogTemp, Warning, TEXT("Fail player"));
+	}
 }

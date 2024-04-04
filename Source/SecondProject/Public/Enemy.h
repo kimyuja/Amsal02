@@ -85,4 +85,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateStack(int32 warn);
+
+	UFUNCTION(BlueprintCallable)
+	class ASecondProjectCharacter* FindPlayerIterater();
+
 };
