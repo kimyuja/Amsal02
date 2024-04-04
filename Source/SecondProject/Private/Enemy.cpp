@@ -8,6 +8,8 @@
 #include <../../../../../../../Source/Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/Kismet/KismetMathLibrary.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/Components/TextRenderComponent.h>
+#include "EnemyCon.h"
+#include "../SecondProjectCharacter.h"
 
 AEnemy::AEnemy()
 {
@@ -16,11 +18,11 @@ AEnemy::AEnemy()
 	// 헤드샷용 컴포넌트를 생성
 	headShot = CreateDefaultSubobject<USphereComponent>(TEXT("Head Shot"));
 	headShot->SetupAttachment(GetCapsuleComponent());
-	headShot->SetRelativeLocation(FVector(0, 0, 90));
+	headShot->SetRelativeLocation(FVector(0, 0, 100));
 	headShot->SetSphereRadius(20.0f);
 
 	// 캡슐 컴포넌트 크기 조절
-	GetCapsuleComponent()->SetCapsuleHalfHeight(70.0f);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(80.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(40.0f);
 
 	// 매쉬 높이 조절
@@ -91,6 +93,8 @@ void AEnemy::Tick(float DeltaTime)
 		delayCheck = 0;
 	}
 
+	ChangeWarning();
+
 	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
 
 	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
@@ -104,9 +108,9 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AEnemy::BasicMoveCycle1()
 {
-	AAIController* alCon = Cast<AAIController>(GetController());
+	AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
 
-	alCon->MoveToLocation(checkPoint1->GetRelativeLocation());
+	aiCon->MoveToLocation(checkPoint1->GetRelativeLocation());
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation());
 	if (check < 100)
 	{
@@ -124,8 +128,8 @@ void AEnemy::BasicMoveCycle1()
 
 void AEnemy::BasicMoveCycle2()
 {
-	AAIController* alCon = Cast<AAIController>(GetController());
-	alCon->MoveToLocation(checkPoint2->GetRelativeLocation());
+	AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
+	aiCon->MoveToLocation(checkPoint2->GetRelativeLocation());
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation());
 	if (check < 100)
 	{
@@ -142,7 +146,7 @@ void AEnemy::BasicMoveCycle2()
 
 void AEnemy::Damaged(float damage)
 {
-	Life = FMath::Clamp(100.0 - damage, 0, 100);
+	Life = FMath::Clamp(Life - damage, 0, 100);
 
 	if (Life <= 0)
 	{
@@ -152,7 +156,43 @@ void AEnemy::Damaged(float damage)
 		GetMesh()->SetAllBodiesPhysicsBlendWeight(1.0);
 		headShot->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		warningComp->SetVisibility(false);
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("%f"), Life);
+}
+
+void AEnemy::ChangeWarning()
+{
+	warningstack = FMath::Clamp(warningstack, 0, 3000);
+
+	if (warningstack < 1000)
+	{
+		warningComp->SetText(FText::FromString(TEXT(".")));
+	}
+	else if(warningstack < 2000)
+	{
+		warningComp->SetText(FText::FromString(TEXT("?")));
+	}
+	else
+	{
+		warningComp->SetText(FText::FromString(TEXT("!")));
+		AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
+		APlayerController* con = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
+		if (con != nullptr)
+		{
+			
+			aiCon->MoveToActor(con);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Fail"));
+		}
+	}
+	
+}
+
+void AEnemy::UpdateStack(int32 warn)
+{
+	warningstack += warn;
 }
