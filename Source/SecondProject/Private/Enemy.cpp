@@ -13,6 +13,7 @@
 #include <../../../../../../../Source/Runtime/Engine/Public/EngineUtils.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/Engine/HitResult.h>
 #include <../../../../../../../Source/Runtime/Engine/Public/CollisionQueryParams.h>
+#include <../../../../../../../Source/Runtime/Engine/Classes/Kismet/GameplayStatics.h>
 
 AEnemy::AEnemy()
 {
@@ -79,6 +80,11 @@ void AEnemy::Tick(float DeltaTime)
 
 	ChangeWarning();
 
+	bulletCount++;
+	if (bulletCount > 100)
+	{
+		bulletCount = 0;
+	}
 	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
 
 	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
@@ -191,7 +197,7 @@ void AEnemy::ChangeWarning()
 		if (player != nullptr)
 		{
 			float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), player->GetActorLocation());
-			if (check > 490)
+			if (check > 500)
 			{
 				GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 				aiCon->MoveToActor(FindPlayerIterater(), 400.0);
@@ -209,7 +215,15 @@ void AEnemy::ChangeWarning()
 					bool bResult = GetWorld()->LineTraceSingleByObjectType(hitInfo,GetActorLocation(),player->GetActorLocation(),objectQueryParams,queryParams);
 					if (bResult)
 					{
-						UE_LOG(LogTemp,Warning,TEXT("%s"), *hitInfo.GetActor()->GetActorNameOrLabel());
+						if (bulletCount == 0)
+						{
+							TSubclassOf<UDamageType> damagetype;
+							UGameplayStatics::ApplyDamage(player, 10.0, player->GetController(), this, damagetype);
+							FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), player->GetActorLocation() - GetActorLocation());
+							SetActorRotation(newRot);
+						}
+						
+						UE_LOG(LogTemp, Warning, TEXT("%d"),bulletCount);
 					}
 					UE_LOG(LogTemp, Warning, TEXT("anim2"));
 				}

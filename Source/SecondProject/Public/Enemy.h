@@ -67,6 +67,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 warningstack = 0;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	int32 bulletCount = 0;
+
 protected:
 	virtual void BeginPlay() override;
 
