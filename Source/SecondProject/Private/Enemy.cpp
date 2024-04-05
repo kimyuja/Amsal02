@@ -79,8 +79,8 @@ void AEnemy::Tick(float DeltaTime)
 
 	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
 
-	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
-	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation()));
+	UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
+	UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation()));
 }
 
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -189,7 +189,7 @@ void AEnemy::ChangeWarning()
 		if (FindPlayerIterater() != nullptr)
 		{
 				
-			aiCon->MoveToActor(FindPlayerIterater());
+			aiCon->MoveToActor(FindPlayerIterater(), 100.0);
 			GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 		}
 		else
