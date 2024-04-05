@@ -11,6 +11,8 @@
 #include "EnemyCon.h"
 #include "../SecondProjectCharacter.h"
 #include <../../../../../../../Source/Runtime/Engine/Public/EngineUtils.h>
+#include <../../../../../../../Source/Runtime/Engine/Classes/Engine/HitResult.h>
+#include <../../../../../../../Source/Runtime/Engine/Public/CollisionQueryParams.h>
 
 AEnemy::AEnemy()
 {
@@ -79,8 +81,8 @@ void AEnemy::Tick(float DeltaTime)
 
 	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
 
-	UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
-	UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation()));
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation()));
 }
 
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -184,13 +186,38 @@ void AEnemy::ChangeWarning()
 	{
 		warningComp->SetText(FText::FromString(TEXT("!")));
 		AEnemyCon* aiCon = Cast<AEnemyCon>(GetController());
-		FindPlayerIterater();
+		ASecondProjectCharacter* player = FindPlayerIterater();
 
-		if (FindPlayerIterater() != nullptr)
+		if (player != nullptr)
 		{
-				
-			aiCon->MoveToActor(FindPlayerIterater(), 100.0);
-			GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+			float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), player->GetActorLocation());
+			if (check > 490)
+			{
+				GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+				aiCon->MoveToActor(FindPlayerIterater(), 400.0);
+			}
+			else
+			{
+				if (anim2 != nullptr)
+				{
+					PlayAnimMontage(anim2);
+					FHitResult hitInfo;
+					FCollisionObjectQueryParams objectQueryParams;
+					objectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+					FCollisionQueryParams queryParams;
+					queryParams.AddIgnoredActor(this);
+					bool bResult = GetWorld()->LineTraceSingleByObjectType(hitInfo,GetActorLocation(),player->GetActorLocation(),objectQueryParams,queryParams);
+					if (bResult)
+					{
+						UE_LOG(LogTemp,Warning,TEXT("%s"), *hitInfo.GetActor()->GetActorNameOrLabel());
+					}
+					UE_LOG(LogTemp, Warning, TEXT("anim2"));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Fail"));
+				}
+			}
 		}
 		else
 		{

@@ -38,6 +38,9 @@ public:
 	class UAnimMontage* anim1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class UAnimMontage* anim2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	float Life = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
