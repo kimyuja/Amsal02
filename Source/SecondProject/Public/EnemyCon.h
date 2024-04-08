@@ -21,4 +21,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	class UAIPerceptionComponent* aiPerception;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	FVector targetLoc;
 };

@@ -10,38 +10,38 @@ class SECONDPROJECT_API AEnemy : public ACharacter
 public:
 	AEnemy();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USphereComponent* headShot;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USkeletalMeshComponent* torso;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USkeletalMeshComponent* hand;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USkeletalMeshComponent* pants;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USkeletalMeshComponent* shoes;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
-	class USceneComponent* checkPoint1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
-	class USceneComponent* checkPoint2;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UTextRenderComponent* warningComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
-	class UAnimMontage* anim1;
+	class UAnimMontage* normal;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
-	class UAnimMontage* anim2;
+	class UAnimMontage* gunAttack;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class UAnimMontage* drink;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	float Life = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	TArray<FVector> checkPoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	FText warningText = FText::FromString(TEXT("."));
@@ -64,11 +64,20 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 delayCheck = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Settings")
+	int32 delay = 100;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 warningstack = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 bulletCount = 0;
+
+	bool bDie = false;
+
+	class AEnemyCon* aiCon;
+
+	class ASecondProjectCharacter* player;
 
 protected:
 	virtual void BeginPlay() override;
@@ -78,16 +87,19 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION()
-	void BasicMoveCycle1();
-
-	UFUNCTION()
-	void BasicMoveCycle2();
+	void BasicMoveCycle(FVector point, UAnimMontage* anim, bool arrive1, bool arrive2);
 
 	UFUNCTION(BlueprintCallable)
 	void Damaged(float damage);
 
 	UFUNCTION(BlueprintCallable)
+	void DrinkPoison(FVector poisonLoc);
+
+	UFUNCTION(BlueprintCallable)
 	void ChangeWarning();
+
+	UFUNCTION(BlueprintCallable)
+	void ShootPlayer();
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateStack(int32 warn);
