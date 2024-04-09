@@ -41,6 +41,9 @@ public:
 	float Life = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	float currentTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	TArray<FVector> checkPoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
@@ -57,6 +60,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	bool bGo = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	bool bLoc = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 play = 0;

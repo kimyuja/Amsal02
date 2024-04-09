@@ -24,7 +24,7 @@ AEnemy::AEnemy()
 
 	// 헤드샷용 컴포넌트를 생성
 	headShot = CreateDefaultSubobject<USphereComponent>(TEXT("Head Shot"));
-	headShot->SetupAttachment(GetCapsuleComponent());
+	headShot->SetupAttachment(GetMesh());
 	headShot->SetRelativeLocation(FVector(0, 0, 100));
 	headShot->SetSphereRadius(20.0f);
 
@@ -47,7 +47,7 @@ AEnemy::AEnemy()
 
 	//경계도 표시
 	warningComp = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Warning"));
-	warningComp->SetupAttachment(RootComponent);
+	warningComp->SetupAttachment(GetMesh());
 	warningComp->SetText(warningText);
 	warningComp->SetRelativeLocation(FVector(0, 0, 130));
 
@@ -83,6 +83,7 @@ void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	currentTime += DeltaTime;
 	// 경계도 함수를 실행한다.
 	ChangeWarning();
 
@@ -110,7 +111,7 @@ void AEnemy::BasicMoveCycle(FVector point, UAnimMontage* anim, bool arrive1, boo
 	// 목적지와 에너미 사이의 거리를 구한다.
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), point);
 	// 거리값이 100 이하일 때
-	if (check < 100)
+	if (check < 100 || currentTime > 30)
 	{
 		bArrive1 = arrive1;
 		bArrive2 = arrive2;
@@ -120,7 +121,6 @@ void AEnemy::BasicMoveCycle(FVector point, UAnimMontage* anim, bool arrive1, boo
 		{
 			PlayAnimMontage(anim);
 			//UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
-			//IsAnyMontagePlaying();
 		}
 	}
 }
@@ -182,8 +182,16 @@ void AEnemy::ChangeWarning()
 		// 한 곳에 도착한 뒤에 100틱 동안 대기 시간을 가진다.
 		if (delayCheck > delay)
 		{
-			bGo = true;
-			delayCheck = 0;
+			if (GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
+			{
+				delayCheck = 0;
+			}
+			else
+			{
+				bGo = true;
+				currentTime = 0;
+				delayCheck = 0;
+			}
 		}
 
 		warningComp->SetText(FText::FromString(TEXT(".")));
@@ -191,14 +199,22 @@ void AEnemy::ChangeWarning()
 	else if(warningstack < 2000)
 	{
 		warningComp->SetText(FText::FromString(TEXT("?")));
-		
-		/*UNavigationSystemV1* navSys1;
-		FNavLocation* navLoc;
-		bool result = navSys1->GetRandomReachablePointInRadius(aiCon->targetLoc, 20.0f, *navLoc);
-		if (result)
+		GetMesh()->GetAnimInstance()->Montage_Stop(NULL);
+		FVector ranLoc;
+		if (bLoc == false || currentTime > 30)
 		{
-			aiCon->MoveToLocation(*navLoc);
-		}*/
+			UNavigationSystemV1* navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+			navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), aiCon->targetLoc, ranLoc, 500.0f);
+			aiCon->MoveToLocation(ranLoc);
+			bLoc = true;
+			currentTime = 0.0f;
+			UE_LOG(LogTemp,Warning,TEXT("%f, %f, %f"),ranLoc.X,ranLoc.Y,ranLoc.Z);
+		}
+		if ((GetActorLocation() - ranLoc).Length() < 100.0f)
+		{
+			bLoc = false;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("%f"), (GetActorLocation() - ranLoc).Length());
 	}
 	else
 	{
