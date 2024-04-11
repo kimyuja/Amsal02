@@ -76,6 +76,10 @@ void AEnemy::BeginPlay()
 		//UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
 	}
 
+	if (enemyType == 0)
+	{
+		warningComp->SetVisibility(false);
+	}
 	
 }
 
@@ -87,8 +91,14 @@ void AEnemy::Tick(float DeltaTime)
 	// 경계도 함수를 실행한다.
 	ChangeWarning();
 
+	if (FVector::Distance(player->GetActorLocation(), GetActorLocation()) < 200.0f)
+	{
+		FVector backVec = GetActorForwardVector() * -1.0f;
+		FVector targetLoc = GetActorLocation() + backVec * 50.0f;
+		FVector knockBackLoc = FMath::Lerp(GetActorLocation(), targetLoc, DeltaTime * 7.0f);
+	}
 	//UE_LOG(LogTemp, Warning,TEXT("%d"),delayCheck);
-
+	
 	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint1->GetRelativeLocation()));
 	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetMathLibrary::Vector_Distance(GetActorLocation(), checkPoint2->GetRelativeLocation()));
 }
@@ -113,9 +123,11 @@ void AEnemy::BasicMoveCycle(FVector point, UAnimMontage* anim, bool arrive1, boo
 	// 거리값이 100 이하일 때
 	if (check < 100 || currentTime > 30)
 	{
+		SetActorLocation(point);
 		bArrive1 = arrive1;
 		bArrive2 = arrive2;
 		bGo = false;
+		currentTime = 0;
 		// 애니매이션 재생
 		if (anim != nullptr)
 		{
@@ -175,22 +187,17 @@ void AEnemy::ChangeWarning()
 		{
 			BasicMoveCycle(checkPoint[1], normal, false, true);
 		}
-		else
-		{
-			delayCheck++;
-		}
 		// 한 곳에 도착한 뒤에 100틱 동안 대기 시간을 가진다.
-		if (delayCheck > delay)
+		if (currentTime > delay)
 		{
 			if (GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
 			{
-				delayCheck = 0;
+				currentTime = 0;
 			}
 			else
 			{
 				bGo = true;
 				currentTime = 0;
-				delayCheck = 0;
 			}
 		}
 
@@ -200,48 +207,42 @@ void AEnemy::ChangeWarning()
 	{
 		warningComp->SetText(FText::FromString(TEXT("?")));
 		GetMesh()->GetAnimInstance()->Montage_Stop(NULL);
-		FVector ranLoc;
-		if (bLoc == false || currentTime > 30)
-		{
-			UNavigationSystemV1* navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
-			navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), aiCon->targetLoc, ranLoc, 500.0f);
-			aiCon->MoveToLocation(ranLoc);
-			bLoc = true;
-			currentTime = 0.0f;
-			UE_LOG(LogTemp,Warning,TEXT("%f, %f, %f"),ranLoc.X,ranLoc.Y,ranLoc.Z);
-		}
-		if ((GetActorLocation() - ranLoc).Length() < 100.0f)
-		{
-			bLoc = false;
-		}
-		UE_LOG(LogTemp, Warning, TEXT("%f"), (GetActorLocation() - ranLoc).Length());
+		MoveRandom(30.0f, 500.0f, aiCon->targetLoc);
 	}
 	else
 	{
 		warningComp->SetText(FText::FromString(TEXT("!")));
 
-		// bulletCount 가 100이 넘어갈 때마다 총을 쏘게한다.(경계도 2000 이상일 때)
-		bulletCount++;
-		if (bulletCount > 100)
+		if (enemyType == 0)
 		{
-			bulletCount = 0;
+			GetCharacterMovement()->MaxWalkSpeed = 1000.0f;
+			MoveRandom(1.0f, 1000.0f, GetActorLocation());
 		}
-		
-		// 플레이어와 AI의 거리를 구한다.
-		float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), player->GetActorLocation());
-		// 거리가 500 이상이라면
-		if (check > 500)
-		{
-			// 500의 속도로 거리가 400이 될 때까지 플레이어를 쫓아간다.
-			GetCharacterMovement()->MaxWalkSpeed = 500.0f;
-			aiCon->MoveToActor(FindPlayerIterater(), 400.0);
-		}
-		// 아니라면
 		else
 		{
-			//gunAttack를 재생하고, 플레이어를 공격한다. 
-			PlayAnimMontage(gunAttack);
-			ShootPlayer();
+			// bulletCount 가 100이 넘어갈 때마다 총을 쏘게한다.(경계도 2000 이상일 때)
+			bulletCount++;
+			if (bulletCount > 100)
+			{
+				bulletCount = 0;
+			}
+
+			// 플레이어와 AI의 거리를 구한다.
+			float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), player->GetActorLocation());
+			// 거리가 500 이상이라면
+			if (check > 500)
+			{
+				// 500의 속도로 거리가 400이 될 때까지 플레이어를 쫓아간다.
+				GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+				aiCon->MoveToActor(FindPlayerIterater(), 400.0);
+			}
+			// 아니라면
+			else
+			{
+				//gunAttack를 재생하고, 플레이어를 공격한다. 
+				PlayAnimMontage(gunAttack);
+				ShootPlayer();
+			}
 		}
 	}
 }
@@ -270,6 +271,24 @@ void AEnemy::ShootPlayer()
 			FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), player->GetActorLocation() - GetActorLocation());
 			SetActorRotation(newRot);
 		}
+	}
+}
+
+void AEnemy::MoveRandom(float delayT, float moveRadius, FVector moveLoc)
+{
+	FVector ranLoc;
+	if (bLoc == false || currentTime > delayT)
+	{
+		UNavigationSystemV1* navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+		navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), moveLoc, ranLoc, moveRadius);
+		aiCon->MoveToLocation(ranLoc);
+		bLoc = true;
+		currentTime = 0.0f;
+		//UE_LOG(LogTemp,Warning,TEXT("%f, %f, %f"),ranLoc.X,ranLoc.Y,ranLoc.Z);
+	}
+	if ((GetActorLocation() - ranLoc).Length() < 100.0f)
+	{
+		bLoc = false;
 	}
 }
 

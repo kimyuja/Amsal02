@@ -71,7 +71,7 @@ public:
 	int32 delayCheck = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Settings")
-	int32 delay = 100;
+	int32 delay = 5;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 warningstack = 0;
@@ -84,6 +84,9 @@ public:
 	class AEnemyCon* aiCon;
 
 	class ASecondProjectCharacter* player;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Settings")
+	int32 enemyType = 0;
 
 protected:
 	virtual void BeginPlay() override;
@@ -106,6 +109,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void ShootPlayer();
+
+	UFUNCTION(BlueprintCallable)
+	void MoveRandom(float delayT, float moveRadius, FVector moveLoc);
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateStack(int32 warn);
