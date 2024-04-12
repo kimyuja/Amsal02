@@ -17,6 +17,7 @@
 #include <../../../../../../../Source/Runtime/AIModule/Classes/Perception/AIPerceptionComponent.h>
 #include <../../../../../../../Source/Runtime/NavigationSystem/Public/NavigationSystem.h>
 #include <../../../../../../../Source/Runtime/Engine/Classes/Animation/AnimInstance.h>
+#include "Navigation\PathFollowingComponent.h"
 
 AEnemy::AEnemy()
 {
@@ -117,7 +118,21 @@ void AEnemy::BasicMoveCycle(FVector point, UAnimMontage* anim, bool arrive1, boo
 		return;
 	}
 	// AI 컨트롤러 안에 있는 MoveToLocation 함수를 사용
-	aiCon->MoveToLocation(point);
+	/*EPathFollowingRequestResult::Type result = aiCon->MoveToLocation(point);
+	if (result == EPathFollowingRequestResult::Type::RequestSuccessful)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Success!!"));
+	}
+	else if (result == EPathFollowingRequestResult::Type::AlreadyAtGoal)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AlreadyAtGoal!!!!!!"));
+	}
+	else if (result == EPathFollowingRequestResult::Type::Failed)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can't Move!!!!!!"));
+	}*/
+
+
 	// 목적지와 에너미 사이의 거리를 구한다.
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), point);
 	// 거리값이 100 이하일 때
