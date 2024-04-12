@@ -132,7 +132,7 @@ void AEnemy::BasicMoveCycle(FVector point, UAnimMontage* anim, bool arrive1, boo
 		UE_LOG(LogTemp, Warning, TEXT("Can't Move!!!!!!"));
 	}*/
 
-
+	aiCon->MoveToLocation(point);
 	// 목적지와 에너미 사이의 거리를 구한다.
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), point);
 	// 거리값이 100 이하일 때
