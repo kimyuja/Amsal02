@@ -15,3 +15,8 @@ void AEnemyCon::BeginPlay()
 {
 	Super::BeginPlay();
 }
+
+void AEnemyCon::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+}

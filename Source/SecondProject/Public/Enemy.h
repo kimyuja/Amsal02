@@ -82,6 +82,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 bulletCount = 0;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	bool bDie = false;
 
 	class AEnemyCon* aiCon;

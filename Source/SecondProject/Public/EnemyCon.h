@@ -18,10 +18,15 @@ public:
 	AEnemyCon();
 
 	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	class UAIPerceptionComponent* aiPerception;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	FVector targetLoc;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	bool bSeeDeath = false;
 };

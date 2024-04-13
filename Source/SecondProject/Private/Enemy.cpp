@@ -50,7 +50,9 @@ AEnemy::AEnemy()
 	warningComp = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Warning"));
 	warningComp->SetupAttachment(GetMesh());
 	warningComp->SetText(warningText);
-	warningComp->SetRelativeLocation(FVector(0, 0, 130));
+	warningComp->SetRelativeLocation(FVector(0, 0, 190));
+	warningComp->SetRelativeRotation(FRotator(0, 90, 0));
+	warningComp->SetHorizontalAlignment(EHTA_Center);
 
 	//캐릭터의 최대 속도, 가속도를 설정.(단위 = cm/s)
 	GetCharacterMovement()->MaxWalkSpeed = 100.0f;
@@ -315,19 +317,24 @@ void AEnemy::ShootPlayer()
 	FHitResult hitInfo;
 	FCollisionObjectQueryParams objectQueryParams;
 	objectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+	objectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(this);
 	bool bResult = GetWorld()->LineTraceSingleByObjectType(hitInfo, GetActorLocation(), player->GetActorLocation(), objectQueryParams, queryParams);
 	// 트레이스에 성공하면
 	if (bResult)
 	{
+		ASecondProjectCharacter* hitplayer = Cast<ASecondProjectCharacter>(hitInfo.GetActor());
 		// 불릿 카운트가 0이 될때마다 플레이어를 바라보면서 플레이어에게 대미지를 준다.
-		if (bulletCount == 0)
+		if (hitplayer != nullptr)
 		{
-			TSubclassOf<UDamageType> damagetype;
-			UGameplayStatics::ApplyDamage(player, 10.0, player->GetController(), this, damagetype);
-			FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), player->GetActorLocation() - GetActorLocation());
-			SetActorRotation(newRot);
+			if (bulletCount == 0)
+			{
+				TSubclassOf<UDamageType> damagetype;
+				UGameplayStatics::ApplyDamage(hitplayer, 10.0, hitplayer->GetController(), this, damagetype);
+				FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), hitplayer->GetActorLocation() - GetActorLocation());
+				SetActorRotation(newRot);
+			}
 		}
 	}
 }
