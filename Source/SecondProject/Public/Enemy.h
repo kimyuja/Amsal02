@@ -65,6 +65,9 @@ public:
 	bool bLoc = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
+	bool bpoison = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
 	int32 play = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Settings")
@@ -85,10 +88,15 @@ public:
 
 	class ASecondProjectCharacter* player;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	int32 enemyType = 0;
 
 protected:
+	
+	bool poisonDeath = false;
+
+	FVector poisonLocation;
+
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -103,6 +111,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void DrinkPoison(FVector poisonLoc);
+
+	UFUNCTION(BlueprintCallable)
+	void GoDrinkPoison();
 
 	UFUNCTION(BlueprintCallable)
 	void ChangeWarning();

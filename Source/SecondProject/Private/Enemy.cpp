@@ -77,11 +77,19 @@ void AEnemy::BeginPlay()
 		//UE_LOG(LogTemp, Warning, TEXT("anim"), delayCheck);
 	}
 
-	if (enemyType == 0)
+	if (enemyType != 1)
 	{
 		warningComp->SetVisibility(false);
 	}
 	
+	if (checkPoint[0] == FVector::ZeroVector)
+	{
+		checkPoint[0] = GetActorLocation();
+		checkPoint[0].Z = GetActorLocation().Z; - 20.0f;
+		checkPoint[1] = GetActorLocation();
+		checkPoint[0].Z = GetActorLocation().Z; -20.0f;
+	}
+
 }
 
 void AEnemy::Tick(float DeltaTime)
@@ -136,7 +144,8 @@ void AEnemy::BasicMoveCycle(FVector point, UAnimMontage* anim, bool arrive1, boo
 	// 목적지와 에너미 사이의 거리를 구한다.
 	float check = UKismetMathLibrary::Vector_Distance(GetActorLocation(), point);
 	// 거리값이 100 이하일 때
-	if (check < 100 || currentTime > 30)
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), check);
+	if (check < 70.0f || currentTime > 30.0f)
 	{
 		SetActorLocation(point);
 		bArrive1 = arrive1;
@@ -175,9 +184,31 @@ void AEnemy::Damaged(float damage)
 
 void AEnemy::DrinkPoison(FVector poisonLoc)
 {
-	aiCon->MoveToLocation(poisonLoc);
-	PlayAnimMontage(drink);
-	Damaged(100.0f);
+	bpoison = true;
+	poisonLocation = poisonLoc;
+}
+
+void AEnemy::GoDrinkPoison()
+{
+	float distance = UKismetMathLibrary::Vector_Distance(GetActorLocation(), poisonLocation);
+	UE_LOG(LogTemp, Warning, TEXT("%f"), distance);
+	if (distance < 100.0f)
+	{
+		FTimerHandle deathTimer;
+		GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLambda([&]() {
+			Damaged(100.0f);
+			}), 4.0f, false);
+		SetActorLocation(poisonLocation);
+		PlayAnimMontage(drink);
+		UE_LOG(LogTemp, Warning, TEXT("Drink"));
+		GetCharacterMovement()->DisableMovement();
+		bpoison = false;
+	}
+	else
+	{
+		//GetMesh()->GetAnimInstance()->Montage_Stop(NULL);
+		aiCon->MoveToLocation(poisonLocation);
+	}
 }
 
 void AEnemy::ChangeWarning()
@@ -194,6 +225,11 @@ void AEnemy::ChangeWarning()
 	if (warningstack < 1000)
 	{
 		//기본 순찰 사이클을 실행한다.
+		if (bpoison)
+		{
+			GoDrinkPoison();
+			return;
+		}
 		if (!bArrive1 && bGo)
 		{
 			BasicMoveCycle(checkPoint[0], normal, true, false);
@@ -211,8 +247,15 @@ void AEnemy::ChangeWarning()
 			}
 			else
 			{
-				bGo = true;
-				currentTime = 0;
+				if (bpoison)
+				{
+					return;
+				}
+				else
+				{
+					bGo = true;
+					currentTime = 0;
+				}
 			}
 		}
 
@@ -228,7 +271,7 @@ void AEnemy::ChangeWarning()
 	{
 		warningComp->SetText(FText::FromString(TEXT("!")));
 
-		if (enemyType == 0)
+		if (enemyType != 1)
 		{
 			GetCharacterMovement()->MaxWalkSpeed = 1000.0f;
 			MoveRandom(1.0f, 1000.0f, GetActorLocation());
