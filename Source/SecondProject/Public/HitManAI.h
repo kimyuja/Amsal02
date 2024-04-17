@@ -79,6 +79,9 @@ public:
 	class UAnimMontage* drinkPoison;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class USoundBase* panicSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	TArray<FVector> setMoveLoc;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
@@ -115,6 +118,9 @@ public:
 	bool bIsDrinkPoison = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
+	bool bIsDamaged = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
 	bool bIsDie = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
@@ -142,10 +148,14 @@ private:
 	int32 maxHP = 100;
 	int32 currentHP;
 	float delayStack = 0;
+	FVector hitLoc;
+	FVector hitDir;
+	bool bIsPlayingMontage;
 	
 
 	class AEnemyCon* aiCon;
 	class ASecondProjectCharacter* hitmanPlayer;
+	class UNavigationSystemV1* navSys1;
 
 	UFUNCTION()
 	void Die();
@@ -154,7 +164,7 @@ private:
 	void EquipWeapon();
 
 	UFUNCTION()
-	void GetRandomLocation();
+	void GetRandomLocation(FVector standardLoc);
 
 	void MoveArround();
 	void MoveDelay(float deltatime);

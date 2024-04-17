@@ -11,6 +11,7 @@
 #include "../SecondProjectCharacter.h"
 #include <../../../../../../../Source/Runtime/Engine/Classes/Kismet/KismetMathLibrary.h>
 #include <../../../../../../../Source/Runtime/NavigationSystem/Public/NavigationSystem.h>
+#include <../../../../../../../Source/Runtime/Engine/Classes/Kismet/GameplayStatics.h>
 
 // Sets default values
 AHitManAI::AHitManAI()
@@ -87,7 +88,6 @@ void AHitManAI::BeginPlay()
 		moveLoc = GetActorLocation();
 		setMoveLoc[0] = GetActorLocation();
 	}
-	
 }
 
 void AHitManAI::Tick(float DeltaTime)
@@ -98,6 +98,8 @@ void AHitManAI::Tick(float DeltaTime)
 	{
 		return;
 	}
+
+	bIsPlayingMontage = GetMesh()->GetAnimInstance()->IsAnyMontagePlaying();
 
 	delayStack += DeltaTime;
 
@@ -157,6 +159,14 @@ void AHitManAI::Damaged(int32 damage)
 	{
 		Die();
 	}
+	else
+	{
+		bIsDamaged = true;
+	}
+	hitLoc = GetActorLocation();
+	hitDir = GetActorLocation() - hitmanPlayer->GetActorLocation();
+	hitDir.Z = 0;
+	hitDir = hitDir.GetSafeNormal();
 }
 
 void AHitManAI::DrinkPoison(bool bIsDrink, FVector poisonLocation)
@@ -196,12 +206,12 @@ void AHitManAI::EquipWeapon()
 	
 }
 
-void AHitManAI::GetRandomLocation()
+void AHitManAI::GetRandomLocation(FVector standardLoc)
 {
 	if (FVector::Distance(GetActorLocation(), ranLoc) > 50.0f)
 	{
-		UNavigationSystemV1* navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
-		navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), aiCon->targetLoc, ranLoc, 50.0f);
+		navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+		navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, 50.0f);
 	}
 	else
 	{
@@ -219,6 +229,7 @@ void AHitManAI::MoveArround()
 		aiCon->StopMovement();
 		UE_LOG(LogTemp, Warning, TEXT("MoveAround->Search"));
 		aiState = EAIState::SEARCH;
+		GetRandomLocation(aiCon->targetLoc);
 	}
 
 	// 무기를 발견할 시 주시단계로 진입
@@ -226,6 +237,11 @@ void AHitManAI::MoveArround()
 	{
 		aiCon->StopMovement();
 		aiState = EAIState::WATCH;
+	}
+
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
 	}
 
 	// 이동할 장소로 이동후 이동대기 상태로 진입
@@ -287,7 +303,7 @@ void AHitManAI::MoveDelay(float deltatime)
 		aiCon->StopMovement(); 
 		UE_LOG(LogTemp, Warning, TEXT("Delay->Search"));
 		aiState = EAIState::SEARCH;
-		GetRandomLocation();
+		GetRandomLocation(aiCon->targetLoc);
 		delayStack = 0;
 	}
 	// 무기를 발견할 시 주시단계로 진입
@@ -297,10 +313,14 @@ void AHitManAI::MoveDelay(float deltatime)
 		aiState = EAIState::WATCH;
 		delayStack = 0;
 	}
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
+	}
 	// 몽타주가 플레이중이 아닐 때 normal animMontage 에 넣어놓은 몽타주중 랜덤으로 1개를 재생한다.
 	int32 num = FMath::RandRange(0, normal.Num() - 1);
 	idleTime = normal[num];
-	bool bIsPlayingMontage = GetMesh()->GetAnimInstance()->IsAnyMontagePlaying();
 	if (idleTime != nullptr && !bIsPlayingMontage)
 	{
 		PlayAnimMontage(idleTime);
@@ -315,6 +335,11 @@ void AHitManAI::MoveDelay(float deltatime)
 
 void AHitManAI::Watch(float deltatime)
 {
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
+	}
 	StopAnimMontage(NULL);
 	FRotator watchRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), hitmanPlayer->GetActorLocation() - GetActorLocation());
 	SetActorRotation(watchRot);
@@ -336,6 +361,11 @@ void AHitManAI::Watch(float deltatime)
 
 void AHitManAI::SearchArround()
 {
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
+	}
 	aiCon->MoveToLocation(ranLoc);
 	if (FVector::Distance(GetActorLocation(), ranLoc) < 50.0f)
 	{
@@ -346,45 +376,149 @@ void AHitManAI::SearchArround()
 
 void AHitManAI::AttackTarget(int32 hitDamage)
 {
-	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) > 250.0f)
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
+		return;
+	}
+	
+	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) > 500.0f)
 	{
 		aiState = EAIState::CHASE;
+		return;
 	}
+	if (!bIsPlayingMontage)
+	{
+		PlayAnimMontage(attack);
+	}
+	//플레이어를 대상으로 라인트레이스를한다.
+	FHitResult hitInfo;
+	FCollisionObjectQueryParams objectQueryParams;
+	objectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+	objectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+	FCollisionQueryParams queryParams;
+	queryParams.AddIgnoredActor(this);
+	bool bResult = GetWorld()->LineTraceSingleByObjectType(hitInfo, GetActorLocation(), hitmanPlayer->GetActorLocation(), objectQueryParams, queryParams);
+	// 트레이스에 성공하면
+	if (bResult)
+	{
+		ASecondProjectCharacter* hitplayer = Cast<ASecondProjectCharacter>(hitInfo.GetActor());
+		TSubclassOf<UDamageType> damagetype;
+		UGameplayStatics::ApplyDamage(hitplayer, 10.0, hitplayer->GetController(), this, damagetype);
+		FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), hitplayer->GetActorLocation() - GetActorLocation());
+		SetActorRotation(newRot);
+	}
+	aiState = EAIState::ATTACKDELAY;
 }
 
 void AHitManAI::AttackDelay()
 {
-	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) > 250.0f)
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
+		return;
+	}
+
+	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) > 500.0f)
 	{
 		aiState = EAIState::CHASE;
+		return;
+	}
+	if (attackdelay != nullptr)
+	{
+		if (!bIsPlayingMontage)
+		{
+			PlayAnimMontage(attackdelay, 0.25f);
+		}
+		/*FTimerHandle attackDelayTimer;
+		if (!GetWorld()->GetTimerManager().IsTimerActive(attackDelayTimer))
+		{
+			GetWorld()->GetTimerManager().SetTimer(attackDelayTimer, FTimerDelegate::CreateLambda([&]() {
+				aiState = EAIState::ATTACK;
+				}), 3.0f, false);
+		}*/
+	}
+	if (delayStack > 4.0f)
+	{
+		StopAnimMontage(NULL);
+		aiState = EAIState::ATTACK;
+		delayStack = 0;
 	}
 }
 
 void AHitManAI::Chase()
 {
-	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) > 250.0f)
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
 	{
-		aiCon->MoveToActor(hitmanPlayer, 200.0f);
+		aiState = EAIState::DAMAGED;
+	}
+
+	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) < 400.0f)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 100.0f;
+		aiState = EAIState::ATTACKDELAY;
 	}
 	else
 	{
-		aiState = EAIState::ATTACK;
+		GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+		aiCon->MoveToActor(hitmanPlayer, 200.0f);
 	}
 }
 
 void AHitManAI::RunAway(float deltatime)
 {
-	
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
+	}
+	// 5분 동안 도망다닌 후 Move 상태로 이동한다.
+	if (delayStack > 300.0f)
+	{
+		aiState = EAIState::MOVE;
+	}
+	// 그 전까지는 랜덤한 위치를 지정해 도망다닌다.
+	else
+	{
+		GetRandomLocation(GetActorLocation());
+		aiCon->MoveToLocation(ranLoc);
+		if (FVector::Distance(ranLoc, GetActorLocation()) > 50.0f)
+		{
+			aiState = EAIState::PANIC;
+		}
+	}
 }
 
 void AHitManAI::Panic(float deltatime)
 {
-
+	// 데미지를 받았을 때 데미지 처리 단계로 진입
+	if (bIsDamaged)
+	{
+		aiState = EAIState::DAMAGED;
+	}
+	if (panicSound != nullptr)
+	{
+		UGameplayStatics::PlaySound2D(this, panicSound);
+	}
+	aiState = EAIState::RUNAWAY;
 }
 
 void AHitManAI::DamagedProcess(float deltatime)
 {
-
+	FVector backVec = GetActorForwardVector() * -1.0f;
+	FVector targetLoc = hitLoc + hitDir * 50.0f;
+	FVector knockBackLoc = FMath::Lerp(GetActorLocation(), targetLoc, deltatime * 7.0f);
+	if (FVector::Distance(GetActorLocation(), targetLoc) > 10.0f)
+	{
+		FTimerHandle damageTimer;
+		GetWorldTimerManager().SetTimer(damageTimer, FTimerDelegate::CreateLambda([&]() {
+			aiState = EAIState::CHASE;
+			}), 3.0f, false);
+		SetActorLocation(knockBackLoc, true);
+	}
 }
 
 ASecondProjectCharacter* AHitManAI::FindPlayerIterater()
