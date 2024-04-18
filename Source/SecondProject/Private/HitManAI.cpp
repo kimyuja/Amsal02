@@ -88,6 +88,7 @@ void AHitManAI::BeginPlay()
 		moveLoc = GetActorLocation();
 		setMoveLoc[0] = GetActorLocation();
 	}
+	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 }
 
 void AHitManAI::Tick(float DeltaTime)
@@ -98,6 +99,7 @@ void AHitManAI::Tick(float DeltaTime)
 	{
 		return;
 	}
+	GetVelocity();
 
 	bIsPlayingMontage = GetMesh()->GetAnimInstance()->IsAnyMontagePlaying();
 
@@ -206,17 +208,24 @@ void AHitManAI::EquipWeapon()
 	
 }
 
-void AHitManAI::GetRandomLocation(FVector standardLoc)
+void AHitManAI::GetRandomLocation(FVector standardLoc, float radius)
 {
-	if (FVector::Distance(GetActorLocation(), ranLoc) > 50.0f)
-	{
-		navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
-		navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, 50.0f);
-	}
-	else
-	{
-		return;
-	}
+	navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+	navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, radius);
+	///*if (ranLoc == FVector::ZeroVector)
+	//{
+	//	navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+	//	navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, radius);
+	//}
+	//if (FVector::Distance(GetActorLocation(), ranLoc) < 50.0f)
+	//{
+	//	navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+	//	navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, radius);
+	//}
+	//else
+	//{
+	//	return;
+	//}*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +238,9 @@ void AHitManAI::MoveArround()
 		aiCon->StopMovement();
 		UE_LOG(LogTemp, Warning, TEXT("MoveAround->Search"));
 		aiState = EAIState::SEARCH;
-		GetRandomLocation(aiCon->targetLoc);
+		GetRandomLocation(aiCon->targetLoc, 50.0f);
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 
 	// 무기를 발견할 시 주시단계로 진입
@@ -237,11 +248,15 @@ void AHitManAI::MoveArround()
 	{
 		aiCon->StopMovement();
 		aiState = EAIState::WATCH;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 
 	// 이동할 장소로 이동후 이동대기 상태로 진입
@@ -268,6 +283,7 @@ void AHitManAI::MoveArround()
 		setRot = setMoveRot[currentSetRot];
 		delayStack = 0;
 		aiState = EAIState::MOVEDELAY;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 	}
 	// 이동 시작 후 30초 이상이 경과했을 경우
 	else if (delayStack > 30.0f)
@@ -287,6 +303,7 @@ void AHitManAI::MoveArround()
 		setRot = setMoveRot[currentSetRot];
 		delayStack = 0;
 		aiState = EAIState::MOVEDELAY;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 	}
 	// 모두 실패시 로그 출력
 	else
@@ -303,20 +320,26 @@ void AHitManAI::MoveDelay(float deltatime)
 		aiCon->StopMovement(); 
 		UE_LOG(LogTemp, Warning, TEXT("Delay->Search"));
 		aiState = EAIState::SEARCH;
-		GetRandomLocation(aiCon->targetLoc);
+		GetRandomLocation(aiCon->targetLoc, 50.0f);
 		delayStack = 0;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	// 무기를 발견할 시 주시단계로 진입
 	if (bSeeWeapon)
 	{
 		aiCon->StopMovement();
 		aiState = EAIState::WATCH;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		delayStack = 0;
+		return;
 	}
 	// 데미지를 받았을 때 데미지 처리 단계로 진입
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	// 몽타주가 플레이중이 아닐 때 normal animMontage 에 넣어놓은 몽타주중 랜덤으로 1개를 재생한다.
 	int32 num = FMath::RandRange(0, normal.Num() - 1);
@@ -329,6 +352,7 @@ void AHitManAI::MoveDelay(float deltatime)
 	{
 		StopAnimMontage(NULL);
 		aiState = EAIState::MOVE;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		delayStack = 0;
 	}
 }
@@ -339,6 +363,8 @@ void AHitManAI::Watch(float deltatime)
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	StopAnimMontage(NULL);
 	FRotator watchRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), hitmanPlayer->GetActorLocation() - GetActorLocation());
@@ -349,13 +375,26 @@ void AHitManAI::Watch(float deltatime)
 	}
 	if (warningStack > 2000)
 	{
-		aiState = EAIState::CHASE;
+		if (aiType == 1)
+		{
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+		else
+		{
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
 	}
 	if (!bSeeWeapon)
 	{
 		aiCon->StopMovement();
 		delayStack = 0;
 		aiState = EAIState::MOVE;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 }
 
@@ -365,11 +404,14 @@ void AHitManAI::SearchArround()
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	aiCon->MoveToLocation(ranLoc);
 	if (FVector::Distance(GetActorLocation(), ranLoc) < 50.0f)
 	{
 		aiState = EAIState::WATCH;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		return;
 	}
 }
@@ -380,13 +422,24 @@ void AHitManAI::AttackTarget(int32 hitDamage)
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		return;
 	}
 	
 	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) > 500.0f)
 	{
-		aiState = EAIState::CHASE;
-		return;
+		if (aiType == 1)
+		{
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+		else
+		{
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
 	}
 	if (!bIsPlayingMontage)
 	{
@@ -410,6 +463,7 @@ void AHitManAI::AttackTarget(int32 hitDamage)
 		SetActorRotation(newRot);
 	}
 	aiState = EAIState::ATTACKDELAY;
+	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 }
 
 void AHitManAI::AttackDelay()
@@ -418,13 +472,24 @@ void AHitManAI::AttackDelay()
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		return;
 	}
 
 	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) > 500.0f)
 	{
-		aiState = EAIState::CHASE;
-		return;
+		if (aiType == 1)
+		{
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+		else
+		{
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
 	}
 	if (attackdelay != nullptr)
 	{
@@ -444,7 +509,9 @@ void AHitManAI::AttackDelay()
 	{
 		StopAnimMontage(NULL);
 		aiState = EAIState::ATTACK;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		delayStack = 0;
+		return;
 	}
 }
 
@@ -454,12 +521,16 @@ void AHitManAI::Chase()
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 
 	if (FVector::Distance(hitmanPlayer->GetActorLocation(), GetActorLocation()) < 400.0f)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 100.0f;
 		aiState = EAIState::ATTACKDELAY;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	else
 	{
@@ -474,20 +545,25 @@ void AHitManAI::RunAway(float deltatime)
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	// 5분 동안 도망다닌 후 Move 상태로 이동한다.
 	if (delayStack > 300.0f)
 	{
 		aiState = EAIState::MOVE;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	// 그 전까지는 랜덤한 위치를 지정해 도망다닌다.
 	else
 	{
-		GetRandomLocation(GetActorLocation());
 		aiCon->MoveToLocation(ranLoc);
-		if (FVector::Distance(ranLoc, GetActorLocation()) > 50.0f)
+		if (FVector::Distance(ranLoc, GetActorLocation()) < 100.0f)
 		{
 			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
 		}
 	}
 }
@@ -498,12 +574,18 @@ void AHitManAI::Panic(float deltatime)
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
 	}
 	if (panicSound != nullptr)
 	{
 		UGameplayStatics::PlaySound2D(this, panicSound);
 	}
+	delayStack = 0;
+	GetRandomLocation(GetActorLocation(), 500.0f);
+	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 	aiState = EAIState::RUNAWAY;
+	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 }
 
 void AHitManAI::DamagedProcess(float deltatime)
@@ -515,7 +597,18 @@ void AHitManAI::DamagedProcess(float deltatime)
 	{
 		FTimerHandle damageTimer;
 		GetWorldTimerManager().SetTimer(damageTimer, FTimerDelegate::CreateLambda([&]() {
-			aiState = EAIState::CHASE;
+			if (aiType == 1)
+			{
+				aiState = EAIState::CHASE;
+				UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+				return;
+			}
+			else
+			{
+				aiState = EAIState::PANIC;
+				UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+				return;
+			}
 			}), 3.0f, false);
 		SetActorLocation(knockBackLoc, true);
 	}

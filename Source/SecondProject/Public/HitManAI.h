@@ -164,7 +164,7 @@ private:
 	void EquipWeapon();
 
 	UFUNCTION()
-	void GetRandomLocation(FVector standardLoc);
+	void GetRandomLocation(FVector standardLoc, float radius);
 
 	void MoveArround();
 	void MoveDelay(float deltatime);
