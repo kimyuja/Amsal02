@@ -32,16 +32,6 @@ AHitManAI::AHitManAI()
 	GetMesh()->SetRelativeLocation(FVector(0, 0, -80));
 	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
 
-	// SkelatalMesh 컴포넌트 생성
-	torso = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Torso"));
-	torso->SetupAttachment(GetMesh());
-	hand = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Hand"));
-	hand->SetupAttachment(GetMesh());
-	pants = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Pants"));
-	pants->SetupAttachment(GetMesh());
-	shoes = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Shoes"));
-	shoes->SetupAttachment(GetMesh());
-
 	//경계도 표시
 	warningComp = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Warning"));
 	warningComp->SetupAttachment(GetMesh());
@@ -241,6 +231,10 @@ void AHitManAI::MoveArround()
 			}
 			UE_LOG(LogTemp, Warning, TEXT("Drink"));
 			GetCharacterMovement()->DisableMovement();
+			if (!bIsPlayingMontage)
+			{
+				PlayAnimMontage(dying);
+			}
 		}
 		return;
 	}
@@ -346,6 +340,10 @@ void AHitManAI::MoveDelay(float deltatime)
 			}
 			UE_LOG(LogTemp, Warning, TEXT("Drink"));
 			GetCharacterMovement()->DisableMovement();
+			if (!bIsPlayingMontage)
+			{
+				PlayAnimMontage(dying);
+			}
 		}
 		return;
 	}

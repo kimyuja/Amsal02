@@ -43,18 +43,6 @@ public:
 	class USphereComponent* headShot;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USkeletalMeshComponent* torso;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USkeletalMeshComponent* hand;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USkeletalMeshComponent* pants;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USkeletalMeshComponent* shoes;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UTextRenderComponent* warningComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
@@ -77,6 +65,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	class UAnimMontage* drinkPoison;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class UAnimMontage* dying;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	class USoundBase* panicSound;
