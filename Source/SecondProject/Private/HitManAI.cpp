@@ -171,25 +171,14 @@ void AHitManAI::Damaged(int32 damage)
 	hitDir = hitDir.GetSafeNormal();
 }
 
-void AHitManAI::DrinkPoison(bool bIsDrink, FVector poisonLocation)
+void AHitManAI::DrinkPoison(bool bIsDrink, FVector poisonLocation, FRotator poisonRotation)
 {
-	float distance = UKismetMathLibrary::Vector_Distance(GetActorLocation(), poisonLocation);
-	UE_LOG(LogTemp, Warning, TEXT("%f"), distance);
-	if (distance < 100.0f)
-	{
-		FTimerHandle deathTimer;
-		GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLambda([&]() {
-			Damaged(100.0f);
-			}), 4.0f, false);
-		SetActorLocation(poisonLocation);
-		PlayAnimMontage(drinkPoison);
-		UE_LOG(LogTemp, Warning, TEXT("Drink"));
-		GetCharacterMovement()->DisableMovement();
-	}
-	else
-	{
-		aiCon->MoveToLocation(poisonLocation);
-	}
+	bIsDrinkPoison = bIsDrink;
+	UE_LOG(LogTemp, Warning, TEXT("%f"), poisonDir);
+	UE_LOG(LogTemp, Warning, TEXT("Go to Drink"));
+	aiCon->MoveToLocation(poisonLocation);
+	poisonLoc = poisonLocation;
+	poisonRot = poisonRotation;
 }
 
 void AHitManAI::Die()
@@ -232,6 +221,29 @@ void AHitManAI::GetRandomLocation(FVector standardLoc, float radius)
 
 void AHitManAI::MoveArround()
 {
+	if (bIsDrinkPoison)
+	{
+		poisonDir = FVector::Distance(GetActorLocation(), poisonLoc);
+		if (poisonDir < 100.0f)
+		{
+			FTimerHandle deathTimer;
+			if (!GetWorld()->GetTimerManager().IsTimerActive(deathTimer))
+			{
+				GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLambda([&]() {
+					Damaged(100.0f);
+					}), 4.0f, false);
+			}
+			SetActorLocation(poisonLoc);
+			SetActorRotation(poisonRot);
+			if (!bIsPlayingMontage)
+			{
+				PlayAnimMontage(drinkPoison);
+			}
+			UE_LOG(LogTemp, Warning, TEXT("Drink"));
+			GetCharacterMovement()->DisableMovement();
+		}
+		return;
+	}
 	// 경계도가 일정 이상일 경우 수색단계로 진입
 	if (warningStack > 1000)
 	{
@@ -314,6 +326,29 @@ void AHitManAI::MoveArround()
 
 void AHitManAI::MoveDelay(float deltatime)
 {
+	if (bIsDrinkPoison)
+	{
+		poisonDir = FVector::Distance(GetActorLocation(), poisonLoc);
+		if (poisonDir < 100.0f)
+		{
+			FTimerHandle deathTimer;
+			if (!GetWorld()->GetTimerManager().IsTimerActive(deathTimer))
+			{
+				GetWorld()->GetTimerManager().SetTimer(deathTimer, FTimerDelegate::CreateLambda([&]() {
+					Damaged(100.0f);
+					}), 4.0f, false);
+			}
+			SetActorLocation(poisonLoc);
+			SetActorRotation(poisonRot);
+			if (!bIsPlayingMontage)
+			{
+				PlayAnimMontage(drinkPoison);
+			}
+			UE_LOG(LogTemp, Warning, TEXT("Drink"));
+			GetCharacterMovement()->DisableMovement();
+		}
+		return;
+	}
 	// 경계도가 일정 이상일 경우 수색단계로 진입
 	if (warningStack > 1000)
 	{

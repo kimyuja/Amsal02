@@ -139,7 +139,7 @@ public:
 	void Damaged(int32 damage);
 
 	UFUNCTION(BlueprintCallable)
-	void DrinkPoison(bool bIsDrink, FVector poisonLocation);
+	void DrinkPoison(bool bIsDrink, FVector poisonLocation, FRotator poisonRotation);
 	
 	// AI 세이브용 파일 출력 함수(보류)
 	//UFUNCTION(BlueprintCallable)
@@ -151,6 +151,9 @@ private:
 	FVector hitLoc;
 	FVector hitDir;
 	bool bIsPlayingMontage;
+	float poisonDir;
+	FVector poisonLoc;
+	FRotator poisonRot;
 	
 
 	class AEnemyCon* aiCon;
