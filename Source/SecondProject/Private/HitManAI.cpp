@@ -21,7 +21,7 @@ AHitManAI::AHitManAI()
 	// Çìµå¼¦¿ë ÄÄÆ÷³ÍÆ®¸¦ »ý¼º
 	headShot = CreateDefaultSubobject<USphereComponent>(TEXT("Head Shot"));
 	headShot->SetupAttachment(GetMesh());
-	headShot->SetRelativeLocation(FVector(0, 0, 100));
+	headShot->SetRelativeLocation(FVector(0, 0, 10));
 	headShot->SetSphereRadius(20.0f);
 
 	// Ä¸½¶ ÄÄÆ÷³ÍÆ® Å©±â Á¶Àý
@@ -149,6 +149,7 @@ void AHitManAI::Damaged(int32 damage)
 	currentHP = FMath::Clamp(currentHP-damage, 0, maxHP);
 	if (currentHP <= 0)
 	{
+		PlayAnimMontage(drinkPoison);
 		Die();
 	}
 	else
@@ -174,8 +175,10 @@ void AHitManAI::DrinkPoison(bool bIsDrink, FVector poisonLocation, FRotator pois
 void AHitManAI::Die()
 {
 	GetCharacterMovement()->DisableMovement();
-	GetMesh()->SetAllBodiesSimulatePhysics(true);
-	GetMesh()->SetAllBodiesPhysicsBlendWeight(1.0);
+	GetMesh()->SetCollisionProfileName(FName("Ragdoll"));
+	GetMesh()->SetSimulatePhysics(true);
+	//GetMesh()->SetAllBodiesSimulatePhysics(true);
+	//GetMesh()->SetAllBodiesPhysicsBlendWeight(1.0);
 	headShot->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	warningComp->SetVisibility(false);
