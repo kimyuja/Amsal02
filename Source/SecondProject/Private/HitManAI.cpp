@@ -149,7 +149,7 @@ void AHitManAI::Damaged(int32 damage)
 	currentHP = FMath::Clamp(currentHP-damage, 0, maxHP);
 	if (currentHP <= 0)
 	{
-		PlayAnimMontage(drinkPoison);
+		PlayAnimMontage(dying);
 		Die();
 	}
 	else
@@ -645,9 +645,10 @@ void AHitManAI::DamagedProcess(float deltatime)
 				UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 				return;
 			}
-			}), 3.0f, false);
+			}), 1.0f, false);
 		SetActorLocation(knockBackLoc, true);
 	}
+	bIsDamaged = false;
 }
 
 ASecondProjectCharacter* AHitManAI::FindPlayerIterater()
