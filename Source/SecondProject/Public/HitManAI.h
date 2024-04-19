@@ -46,7 +46,10 @@ public:
 	class UTextRenderComponent* warningComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
-	class UStaticMeshComponent* gunMeshComp;
+	class USkeletalMeshComponent* itemMeshComp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class UStaticMeshComponent* cupMeshComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	int32 aiType = 0;

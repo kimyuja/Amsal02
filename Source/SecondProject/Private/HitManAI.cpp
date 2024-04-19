@@ -21,7 +21,7 @@ AHitManAI::AHitManAI()
 	// 헤드샷용 컴포넌트를 생성
 	headShot = CreateDefaultSubobject<USphereComponent>(TEXT("Head Shot"));
 	headShot->SetupAttachment(GetMesh());
-	headShot->SetRelativeLocation(FVector(0, 0, 10));
+	headShot->SetRelativeLocation(FVector(0, 0, 170));
 	headShot->SetSphereRadius(20.0f);
 
 	// 캡슐 컴포넌트 크기 조절
@@ -39,6 +39,14 @@ AHitManAI::AHitManAI()
 	warningComp->SetRelativeLocation(FVector(0, 0, 190));
 	warningComp->SetRelativeRotation(FRotator(0, 90, 0));
 	warningComp->SetHorizontalAlignment(EHTA_Center);
+
+	// 오른손에 아이템 들기를 위한 매쉬 만들기
+	itemMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Equip Item"));
+	itemMeshComp->SetupAttachment(GetMesh(), FName("EquipItem"));
+
+	// 독살용 컵 매쉬 만들기
+	cupMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Cup"));
+	cupMeshComp->SetupAttachment(GetMesh(), FName("Cup"));
 
 	//캐릭터의 최대 속도, 가속도를 설정.(단위 = cm/s)
 	GetCharacterMovement()->MaxWalkSpeed = 100.0f;
@@ -194,20 +202,6 @@ void AHitManAI::GetRandomLocation(FVector standardLoc, float radius)
 {
 	navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
 	navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, radius);
-	///*if (ranLoc == FVector::ZeroVector)
-	//{
-	//	navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
-	//	navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, radius);
-	//}
-	//if (FVector::Distance(GetActorLocation(), ranLoc) < 50.0f)
-	//{
-	//	navSys1 = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
-	//	navSys1->K2_GetRandomLocationInNavigableRadius(GetWorld(), standardLoc, ranLoc, radius);
-	//}
-	//else
-	//{
-	//	return;
-	//}*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
