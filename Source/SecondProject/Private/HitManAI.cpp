@@ -487,10 +487,13 @@ void AHitManAI::AttackTarget(int32 hitDamage)
 	if (bResult)
 	{
 		ASecondProjectCharacter* hitplayer = Cast<ASecondProjectCharacter>(hitInfo.GetActor());
-		TSubclassOf<UDamageType> damagetype;
-		UGameplayStatics::ApplyDamage(hitplayer, 10.0, hitplayer->GetController(), this, damagetype);
-		FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), hitplayer->GetActorLocation() - GetActorLocation());
-		SetActorRotation(newRot);
+		if (hitplayer != nullptr)
+		{
+			TSubclassOf<UDamageType> damagetype;
+			UGameplayStatics::ApplyDamage(hitplayer, 10.0, hitplayer->GetController(), this, damagetype);
+			FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), hitplayer->GetActorLocation() - GetActorLocation());
+			SetActorRotation(newRot);
+		}
 	}
 	aiState = EAIState::ATTACKDELAY;
 	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
@@ -547,6 +550,14 @@ void AHitManAI::AttackDelay()
 
 void AHitManAI::Chase()
 {
+	if (warningStack < 2000)
+	{
+		aiCon->StopMovement();
+		aiState = EAIState::MOVEDELAY;
+		delayStack = 0;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
+	}
 	// 데미지를 받았을 때 데미지 처리 단계로 진입
 	if (bIsDamaged)
 	{
