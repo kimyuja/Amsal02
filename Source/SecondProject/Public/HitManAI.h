@@ -131,7 +131,7 @@ public:
 	FVector ranLoc;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
-	FVector coinLoc;
+	FVector coinLoc = FVector::ZeroVector;
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateWarningStack(int32 warnStack);
