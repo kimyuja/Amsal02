@@ -9,6 +9,7 @@
 UENUM(BlueprintType)
 enum class EAIState : uint8
 {
+	IDLE		UMETA(DisplayName = "Idle State"),
 	MOVE		UMETA(DisplayName = "Move State"),
 	MOVEDELAY	UMETA(DisplayName = "Move Delay State"),
 	WATCH		UMETA(DisplayName = "watch State"),
@@ -112,6 +113,9 @@ public:
 	bool bIsDrinkPoison = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
+	bool bFindCoin = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
 	bool bIsDamaged = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
@@ -126,6 +130,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
 	FVector ranLoc;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	FVector coinLoc;
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateWarningStack(int32 warnStack);
 
@@ -134,7 +141,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DrinkPoison(bool bIsDrink, FVector poisonLocation, FRotator poisonRotation);
-	
+
+	UFUNCTION(BlueprintCallable)
+	void CoinReaction(UStaticMeshComponent* coin);
+
 	// AI 세이브용 파일 출력 함수(보류)
 	//UFUNCTION(BlueprintCallable)
 private:
@@ -148,6 +158,7 @@ private:
 	float poisonDir;
 	FVector poisonLoc;
 	FRotator poisonRot;
+	
 	
 
 	class AEnemyCon* aiCon;
@@ -163,6 +174,7 @@ private:
 	UFUNCTION()
 	void GetRandomLocation(FVector standardLoc, float radius);
 
+	void Idle();
 	void MoveArround();
 	void MoveDelay(float deltatime);
 	void Watch(float deltatime);

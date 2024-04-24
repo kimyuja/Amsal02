@@ -105,6 +105,9 @@ void AHitManAI::Tick(float DeltaTime)
 
 	switch (aiState)
 	{
+	case EAIState::IDLE:
+		Idle();
+		break;
 	case EAIState::MOVE:
 		MoveArround();
 		break;
@@ -137,6 +140,18 @@ void AHitManAI::Tick(float DeltaTime)
 		break;
 	default:
 		break;
+	}
+
+	if (aiType == 1)
+	{
+		if (warningStack >= 2000)
+		{
+			bEquipWeapon = true;
+		}
+		else
+		{
+			bEquipWeapon = false;
+		}
 	}
 }
 
@@ -180,6 +195,14 @@ void AHitManAI::DrinkPoison(bool bIsDrink, FVector poisonLocation, FRotator pois
 	poisonRot = poisonRotation;
 }
 
+void AHitManAI::CoinReaction(UStaticMeshComponent* coin)
+{
+	bFindCoin = true;
+	StopAnimMontage(NULL);
+	aiState = EAIState::IDLE;
+	delayStack = 0;
+}
+
 void AHitManAI::Die()
 {
 	GetCharacterMovement()->DisableMovement();
@@ -205,6 +228,29 @@ void AHitManAI::GetRandomLocation(FVector standardLoc, float radius)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+void AHitManAI::Idle()
+{
+	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+	if (!bFindCoin)
+	{
+		aiState = EAIState::MOVE;
+	}
+	else if (bFindCoin)
+	{
+		aiCon->MoveToLocation(coinLoc);
+		UE_LOG(LogTemp, Warning, TEXT("Coin"));
+		if (FVector::Distance(GetActorLocation(), coinLoc) < 120.0f)
+		{
+			if (delayStack > 5.0f)
+			{
+				bFindCoin = false;
+				delayStack = 0;
+			}
+			
+		}
+	}
+}
 
 void AHitManAI::MoveArround()
 {
@@ -528,7 +574,7 @@ void AHitManAI::AttackDelay()
 	{
 		if (!bIsPlayingMontage)
 		{
-			PlayAnimMontage(attackdelay, 0.25f);
+			PlayAnimMontage(attackdelay);
 		}
 		/*FTimerHandle attackDelayTimer;
 		if (!GetWorld()->GetTimerManager().IsTimerActive(attackDelayTimer))
@@ -538,7 +584,7 @@ void AHitManAI::AttackDelay()
 				}), 3.0f, false);
 		}*/
 	}
-	if (delayStack > 4.0f)
+	if (delayStack > 2.5f)
 	{
 		StopAnimMontage(NULL);
 		aiState = EAIState::ATTACK;
