@@ -232,9 +232,10 @@ void AHitManAI::GetRandomLocation(FVector standardLoc, float radius)
 void AHitManAI::Idle()
 {
 	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
-	if (!bFindCoin)
+	if (!bFindCoin || delayStack > 10.0f)
 	{
 		aiState = EAIState::MOVE;
+		delayStack = 0;
 	}
 	else if (bFindCoin)
 	{
@@ -287,6 +288,7 @@ void AHitManAI::MoveArround()
 		aiCon->StopMovement();
 		UE_LOG(LogTemp, Warning, TEXT("MoveAround->Search"));
 		aiState = EAIState::SEARCH;
+		delayStack = 0;
 		GetRandomLocation(aiCon->targetLoc, 50.0f);
 		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		return;
@@ -297,6 +299,7 @@ void AHitManAI::MoveArround()
 	{
 		aiCon->StopMovement();
 		aiState = EAIState::WATCH;
+		delayStack = 0;
 		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		return;
 	}
@@ -332,6 +335,7 @@ void AHitManAI::MoveArround()
 		setRot = setMoveRot[currentSetRot];
 		delayStack = 0;
 		aiState = EAIState::MOVEDELAY;
+		delayStack = 0;
 		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 	}
 	// 이동 시작 후 30초 이상이 경과했을 경우
