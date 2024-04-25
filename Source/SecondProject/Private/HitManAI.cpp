@@ -154,7 +154,8 @@ void AHitManAI::Tick(float DeltaTime)
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+	//UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+	//UE_LOG(LogTemp, Warning, TEXT("%d"), warningStack);
 }
 
 void AHitManAI::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -174,7 +175,7 @@ void AHitManAI::Damaged(int32 damage)
 	currentHP = FMath::Clamp(currentHP-damage, 0, maxHP);
 	if (currentHP <= 0)
 	{
-		bIsDamaged = true;
+		//bIsDamaged = true;
 		StopAnimMontage(NULL);
 		PlayAnimMontage(dying);
 		Die();
@@ -257,10 +258,40 @@ void AHitManAI::Idle()
 			
 		}
 	}
+	if (warningStack > 2000)
+	{
+		if (aiType == 1)
+		{
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+		else
+		{
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+	}
 }
 
 void AHitManAI::MoveArround()
 {
+	if (warningStack >= 2000)
+	{
+		if (aiType == 1)
+		{
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+		else
+		{
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+	}
 	if (bIsDrinkPoison)
 	{
 		poisonDir = FVector::Distance(GetActorLocation(), poisonLoc);
@@ -373,6 +404,21 @@ void AHitManAI::MoveArround()
 
 void AHitManAI::MoveDelay(float deltatime)
 {
+	if (warningStack >= 2000)
+	{
+		if (aiType == 1)
+		{
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+		else
+		{
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+	}
 	if (bIsDrinkPoison)
 	{
 		poisonDir = FVector::Distance(GetActorLocation(), poisonLoc);
@@ -486,6 +532,21 @@ void AHitManAI::Watch(float deltatime)
 
 void AHitManAI::SearchArround()
 {
+	if (warningStack >= 2000)
+	{
+		if (aiType == 1)
+		{
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+		else
+		{
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			return;
+		}
+	}
 	// 데미지를 받았을 때 데미지 처리 단계로 진입
 	if (bIsDamaged)
 	{
@@ -643,30 +704,21 @@ void AHitManAI::Chase()
 void AHitManAI::RunAway(float deltatime)
 {
 	StopAnimMontage(NULL);
+	// 랜덤한 위치를 지정해 도망다닌다.
+	aiCon->MoveToLocation(ranLoc);
+	if (delayStack > 3.0f)
+	{
+		delayStack = 0;
+		aiState = EAIState::PANIC;
+		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+		return;
+	}
 	// 데미지를 받았을 때 데미지 처리 단계로 진입
 	if (bIsDamaged)
 	{
 		aiState = EAIState::DAMAGED;
 		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 		return;
-	}
-	// 5분 동안 도망다닌 후 Move 상태로 이동한다.
-	if (delayStack > 300.0f)
-	{
-		aiState = EAIState::MOVE;
-		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
-		return;
-	}
-	// 그 전까지는 랜덤한 위치를 지정해 도망다닌다.
-	else
-	{
-		aiCon->MoveToLocation(ranLoc);
-		if (FVector::Distance(ranLoc, GetActorLocation()) < 10.0f || delayStack > 5.0f)
-		{
-			aiState = EAIState::PANIC;
-			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
-			return;
-		}
 	}
 }
 
@@ -683,15 +735,13 @@ void AHitManAI::Panic(float deltatime)
 	{
 		UGameplayStatics::PlaySound2D(this, panicSound);
 	}
+	
 	delayStack = 0;
-	if (panicSound != nullptr)
-	{
-		UGameplayStatics::PlaySound2D(this, panicSound);
-	}
 	GetRandomLocation(GetActorLocation(), 500.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 	aiState = EAIState::RUNAWAY;
 	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+	
 }
 
 void AHitManAI::DamagedProcess(float deltatime)
@@ -699,26 +749,51 @@ void AHitManAI::DamagedProcess(float deltatime)
 	FVector backVec = GetActorForwardVector() * -1.0f;
 	FVector targetLoc = hitLoc + hitDir * 50.0f;
 	FVector knockBackLoc = FMath::Lerp(GetActorLocation(), targetLoc, deltatime * 7.0f);
-	if (FVector::Distance(GetActorLocation(), targetLoc) > 10.0f)
+
+	if (delayStack > 1.0f)
 	{
-		FTimerHandle damageTimer;
+		delayStack = 0;
+		if (aiType == 1)
+		{
+			delayStack = 0;
+			aiState = EAIState::CHASE;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			bIsDamaged = false;
+			return;
+		}
+		else
+		{
+			delayStack = 0;
+			aiState = EAIState::PANIC;
+			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+			bIsDamaged = false;
+			return;
+		}
+	}
+
+	/*FTimerHandle damageTimer;
+	if (FVector::Distance(GetActorLocation(), targetLoc) > 10.0f && !GetWorldTimerManager().IsTimerActive(damageTimer))
+	{
 		GetWorldTimerManager().SetTimer(damageTimer, FTimerDelegate::CreateLambda([&]() {
 			if (aiType == 1)
 			{
+				delayStack = 0;
 				aiState = EAIState::CHASE;
 				UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+				bIsDamaged = false;
 				return;
 			}
 			else
 			{
+				delayStack = 0;
 				aiState = EAIState::PANIC;
 				UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
+				bIsDamaged = false;
 				return;
 			}
 			}), 1.0f, false);
 		SetActorLocation(knockBackLoc, true);
-	}
-	bIsDamaged = false;
+	}*/
 }
 
 ASecondProjectCharacter* AHitManAI::FindPlayerIterater()
