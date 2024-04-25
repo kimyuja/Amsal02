@@ -153,6 +153,8 @@ void AHitManAI::Tick(float DeltaTime)
 			bEquipWeapon = false;
 		}
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 }
 
 void AHitManAI::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -172,6 +174,8 @@ void AHitManAI::Damaged(int32 damage)
 	currentHP = FMath::Clamp(currentHP-damage, 0, maxHP);
 	if (currentHP <= 0)
 	{
+		bIsDamaged = true;
+		StopAnimMontage(NULL);
 		PlayAnimMontage(dying);
 		Die();
 	}
@@ -206,14 +210,16 @@ void AHitManAI::CoinReaction(UStaticMeshComponent* coin)
 void AHitManAI::Die()
 {
 	GetCharacterMovement()->DisableMovement();
-	GetMesh()->SetCollisionProfileName(FName("Ragdoll"));
+	//GetMesh()->SetCollisionProfileName(FName("Ragdoll"));
 	GetMesh()->SetSimulatePhysics(true);
-	//GetMesh()->SetAllBodiesSimulatePhysics(true);
-	//GetMesh()->SetAllBodiesPhysicsBlendWeight(1.0);
+	GetMesh()->SetAllBodiesSimulatePhysics(true);
+	GetMesh()->SetAllBodiesPhysicsBlendWeight(1.0);
 	headShot->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	warningComp->SetVisibility(false);
 	bIsDie = true;
+	aiCon->Destroy();
+	UE_LOG(LogTemp, Warning, TEXT("Die"));
 }
 
 void AHitManAI::EquipWeapon()
@@ -359,10 +365,10 @@ void AHitManAI::MoveArround()
 		UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
 	}
 	// 모두 실패시 로그 출력
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Can't Move!"));
-	}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Can't Move!"));
+	//}
 }
 
 void AHitManAI::MoveDelay(float deltatime)
@@ -543,6 +549,10 @@ void AHitManAI::AttackTarget(int32 hitDamage)
 			UGameplayStatics::ApplyDamage(hitplayer, 10.0, hitplayer->GetController(), this, damagetype);
 			FRotator newRot = UKismetMathLibrary::MakeRotFromZX(GetActorUpVector(), hitplayer->GetActorLocation() - GetActorLocation());
 			SetActorRotation(newRot);
+			if (attackSound != nullptr)
+			{
+				UGameplayStatics::PlaySound2D(this, attackSound);
+			}
 		}
 	}
 	aiState = EAIState::ATTACKDELAY;
@@ -632,6 +642,7 @@ void AHitManAI::Chase()
 
 void AHitManAI::RunAway(float deltatime)
 {
+	StopAnimMontage(NULL);
 	// 데미지를 받았을 때 데미지 처리 단계로 진입
 	if (bIsDamaged)
 	{
@@ -650,7 +661,7 @@ void AHitManAI::RunAway(float deltatime)
 	else
 	{
 		aiCon->MoveToLocation(ranLoc);
-		if (FVector::Distance(ranLoc, GetActorLocation()) < 100.0f)
+		if (FVector::Distance(ranLoc, GetActorLocation()) < 10.0f || delayStack > 5.0f)
 		{
 			aiState = EAIState::PANIC;
 			UE_LOG(LogTemp, Warning, TEXT("State Transition: %s"), *StaticEnum<EAIState>()->GetValueAsString(aiState));
@@ -673,6 +684,10 @@ void AHitManAI::Panic(float deltatime)
 		UGameplayStatics::PlaySound2D(this, panicSound);
 	}
 	delayStack = 0;
+	if (panicSound != nullptr)
+	{
+		UGameplayStatics::PlaySound2D(this, panicSound);
+	}
 	GetRandomLocation(GetActorLocation(), 500.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
 	aiState = EAIState::RUNAWAY;

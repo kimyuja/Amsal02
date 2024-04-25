@@ -77,6 +77,9 @@ public:
 	class USoundBase* panicSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
+	class USoundBase* attackSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Settings")
 	TArray<FVector> setMoveLoc;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Settings")
