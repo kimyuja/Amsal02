@@ -733,7 +733,7 @@ void AHitManAI::Panic(float deltatime)
 	}
 	if (panicSound != nullptr)
 	{
-		UGameplayStatics::PlaySound2D(this, panicSound);
+		UGameplayStatics::PlaySoundAtLocation(this, panicSound,GetActorLocation());
 	}
 	
 	delayStack = 0;
